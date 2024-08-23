@@ -42,31 +42,47 @@ namespace ConsoleApp
                 var result = await embeddingClient.GenerateEmbeddingAsync(input);
                 if (result != null)
                 {
-                    {
-                        logger.LogInformation($"Vector of question: {result.Value}");
-                    }
+                    logger.LogInformation($"Vector of question: {result.Value}");
                     var fileClient = client.GetFileClient();
+                    await ListFiles(fileClient);
                     var oaifiResult = await fileClient.UploadFileAsync(localBlogPostsFilePath, FileUploadPurpose.Batch);
                     logger.LogInformation($"Uploaded file {oaifiResult.Value.Filename}");
-                    //var vc = new VectorStoreClient(new ApiKeyCredential(configuration["Azure.OpenAI.Key"]));
 #pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                     VectorStoreClient vectorStoreClient = client.GetVectorStoreClient();
 #pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                     var vcResult = await vectorStoreClient.GetVectorStoreAsync("blogvc");
                     VectorStore vs = vcResult.Value;
+                    await ListFilesInVectorStore(vs);
                     if (vs != null)
                     {
-
                         var fa = await vectorStoreClient.AddFileToVectorStoreAsync(vs, oaifiResult.Value);
+                        
                     }
                 }
                 ChatCompletionOptions chatCompletionOptions = new ChatCompletionOptions();
+                //chatCompletionOptions.Tools.Add(new ChatTool() { });
                 var chatCompletion = await chatClient.CompleteChatAsync([
                     new SystemChatMessage("You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest content available in prompt.Do not answer from any sources other than the mentioned blog"),
                     //new UserChatMessage(File.ReadAllText(localBlogPostsFilePath)),
                     new UserChatMessage(input)]);
                 logger.LogInformation($"ChatGPT: {chatCompletion.Value.Role}: {chatCompletion.Value.Content[0].Text} ");
             }
+        }
+
+        private async Task ListFiles(FileClient fileClient)
+        {
+            var batchFiles =await fileClient.GetFilesAsync(OpenAIFilePurpose.Batch);
+            foreach (var batchFile in batchFiles.Value)
+            {
+                logger.LogInformation($"{batchFile.Id},{batchFile.Filename},{batchFile.Status}-{batchFile.StatusDetails}");
+            }
+        }
+
+        private async Task ListFilesInVectorStore(VectorStore vs)
+        {
+            logger.LogInformation($"Vector Store : Name:{vs.Name},STatus:{vs.Status},Id:{vs.Id}");
+            logger.LogInformation($"FileCount:{vs.FileCounts.Total},Completed:{vs.FileCounts.Completed},InProgress:{vs.FileCounts.InProgress},Cancelled:{vs.FileCounts.Cancelled},Failed:{vs.FileCounts.Failed}");
+            await Task.FromResult<string>("");
         }
     }
 }
