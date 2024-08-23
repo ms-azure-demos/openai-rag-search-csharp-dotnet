@@ -12,8 +12,9 @@ namespace ConsoleApp
                 .ConfigureServices((hostBuilderContext, services) =>
                 {
                     services.AddHostedService<MenuService>();
-                    services.AddScoped<IDependency, Dependency>();
-                    services.AddSingleton<Option1>();
+                    services.AddScoped<IBlogReader, BlogReader>();
+                    services.AddSingleton<OpenAIRAGOption>();
+                    services.AddSingleton<DownloadBlogPostsOption>();
                 })
                 //.UseConsoleLifetime() // This may be used when running inside container. But we dont really run an interative menu program in container.
                 .Build()

@@ -8,15 +8,18 @@ namespace ConsoleApp
 {
     internal class MenuService : BackgroundService
     {
-        public Option1 Option1 { get; init; }
-        public MenuService(Option1 opt1)
+        public OpenAIRAGOption openAIRAGOption;
+        private readonly DownloadBlogPostsOption downloadBlogPostsOption;
+        public MenuService(OpenAIRAGOption opt1,DownloadBlogPostsOption downloadBlogPostsOption)
         {
-            Option1 = opt1;
+            openAIRAGOption = opt1;
+            this.downloadBlogPostsOption = downloadBlogPostsOption;
         }
         protected async override Task ExecuteAsync(CancellationToken stoppingToken)
         {
             var menu = new Menu()
-                .Add("Menu option 1", async (token) => await Option1.Execute())
+                .Add("Open AI - Extract posts from joymonscode", async (token) => await downloadBlogPostsOption.Execute(stoppingToken))
+                .Add("Open AI - RAG with joymonscode", async (token) => await openAIRAGOption.Execute(stoppingToken))
                 .AddSync("Exit", () => Environment.Exit(0));
             await menu.Display(CancellationToken.None);
             await base.StartAsync(stoppingToken);
