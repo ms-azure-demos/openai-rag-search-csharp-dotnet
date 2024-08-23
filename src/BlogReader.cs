@@ -30,11 +30,10 @@ namespace ConsoleApp
             {
                 foreach (var post in posts.Items)
                 {
-                    Console.WriteLine($"Title: {post.Title}");
-                    Console.WriteLine($"Published: {post.Published}");
-                    Console.WriteLine($"Content: {post.Content.Substring(0, Math.Min(post.Content.Length, 1000))}...");
+                    Console.WriteLine($"Published: {post.Published}, Title: {post.Title}, Url: {post.Url}");
+                    //Console.WriteLine($"Title: {post.Content.Substring(0, Math.Min(post.Content.Length, 1000))}...");
                     Console.WriteLine(new string('-', 50));
-                    yield return new BlogPost() { Title = post.Title, PublishedOn = DateTime.Parse(post.Published), Content = post.Content };
+                    yield return new BlogPost() { Title = post.Title, PublishedOn = DateTime.Parse(post.Published),Url= post.Url, Content = post.Content };
                 }
             }
             else
