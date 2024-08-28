@@ -7,16 +7,17 @@ namespace ConsoleApp
 {
     class Program
     {
-        async static Task Main (string[] args) =>
+        async static Task Main(string[] args) =>
             await Host.CreateDefaultBuilder(args)
                 .ConfigureServices((hostBuilderContext, services) =>
                 {
                     services.AddHostedService<MenuService>();
                     services.AddScoped<IBlogReader, BlogReader>();
                     services.AddSingleton<OpenAIOption>();
-
+                    services.AddSingleton<OpenAIAzureSearchRAGOptions>();
                     services.AddSingleton<OpenAIRAGOption>();
                     services.AddSingleton<DownloadBlogPostsOption>();
+                    services.AddSingleton<AzureSearchManager>();
 
                 })
                 //.UseConsoleLifetime() // This may be used when running inside container. But we dont really run an interative menu program in container.

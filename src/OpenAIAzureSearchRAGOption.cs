@@ -15,23 +15,26 @@ using System.IO;
 using OpenAI.VectorStores;
 using OpenAI.Files;
 using Azure.AI.OpenAI.Chat;
+using System.Net;
 namespace ConsoleApp
 {
-    class OpenAIRAGOption
+    class OpenAIAzureSearchRAGOptions
     {
+        private const string SearchIndexName = "blog-index";
         IBlogReader blogReader;
-        ILogger<OpenAIRAGOption> logger;
+        ILogger<OpenAIAzureSearchRAGOptions> logger;
         IConfiguration configuration;
-
-        public OpenAIRAGOption(IBlogReader dep, ILogger<OpenAIRAGOption> logger, IConfiguration config)
+        AzureSearchManager searchManager;
+        public OpenAIAzureSearchRAGOptions(IBlogReader dep, ILogger<OpenAIAzureSearchRAGOptions> logger, IConfiguration config, AzureSearchManager azureSearchManager)
         {
             blogReader = dep;
             this.logger = logger;
             this.configuration = config;
+            this.searchManager = azureSearchManager;
         }
-        async internal Task Execute(CancellationToken stoppingToken)
+        async internal Task ExecuteSearch(CancellationToken stoppingToken)
         {
-            logger.LogTrace($"{nameof(OpenAIRAGOption)} : Start");
+            logger.LogTrace($"{nameof(OpenAIAzureSearchRAGOptions)} : Start");
             string localBlogPostsFilePath = configuration["LocalBlogPostsFileName"];
             OpenAIClient client = new AzureOpenAIClient(new Uri(configuration["Azure.OpenAI.Url"]), new ApiKeyCredential(configuration["Azure.OpenAI.Key"]));
             string input = "q";
@@ -39,45 +42,33 @@ namespace ConsoleApp
             {
                 input = Input.ReadString("Question (q/quit) to quit: ");
                 var chatClient = client.GetChatClient("gpt4");
-                //await TryVector(localBlogPostsFilePath, client, input);
                 ChatCompletionOptions chatCompletionOptions = new ChatCompletionOptions();
-                //chatCompletionOptions.Tools.Add(new ChatTool() { });
+#pragma warning disable AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+                chatCompletionOptions.AddDataSource(new AzureSearchChatDataSource()
+                {
+                    Endpoint = new Uri(configuration["Azure.Search.EndPoint"]),
+                    IndexName = configuration["Azure.Search.IndexName"],
+                    Authentication = DataSourceAuthentication.FromApiKey(configuration["AzureSearch.ApiKey"])
+                });
+#pragma warning restore AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 var chatCompletion = await chatClient.CompleteChatAsync([
                     new SystemChatMessage("You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest content available in prompt.Do not answer from any sources other than the mentioned blog"),
-                    new UserChatMessage(File.ReadAllText(localBlogPostsFilePath)),
+                    //new UserChatMessage(File.ReadAllText(localBlogPostsFilePath)),
                     new UserChatMessage(input)]);
                 logger.LogInformation($"ChatGPT: {chatCompletion.Value.Role}: {chatCompletion.Value.Content[0].Text} ");
-            } while (!string.Equals(input,"q",StringComparison.OrdinalIgnoreCase) && !string.Equals(input,"quit",StringComparison.OrdinalIgnoreCase));
+            } while (!string.Equals(input, "q", StringComparison.OrdinalIgnoreCase) && !string.Equals(input, "quit", StringComparison.OrdinalIgnoreCase));
         }
 
-        private async Task TryVector(string localBlogPostsFilePath, OpenAIClient client, string input)
+        internal async Task VectorizeBlogPosts(CancellationToken token)
         {
-            OpenAI.Embeddings.EmbeddingClient embeddingClient = client.GetEmbeddingClient("text-embedding-ada-002");
-            var result = await embeddingClient.GenerateEmbeddingAsync(input);
-            if (result != null)
-            {
-                logger.LogInformation($"Vector of question: {result.Value}");
-                var fileClient = client.GetFileClient();
-                await ListFiles(fileClient);
-                var oaifiResult = await fileClient.UploadFileAsync(localBlogPostsFilePath, FileUploadPurpose.Batch);
-                logger.LogInformation($"Uploaded file {oaifiResult.Value.Filename}");
-#pragma warning disable OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                VectorStoreClient vectorStoreClient = client.GetVectorStoreClient();
-#pragma warning restore OPENAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                var vcResult = await vectorStoreClient.GetVectorStoreAsync("blogvc");
-                VectorStore vs = vcResult.Value;
-                await ListFilesInVectorStore(vs);
-                if (vs != null)
-                {
-                    var fa = await vectorStoreClient.AddFileToVectorStoreAsync(vs, oaifiResult.Value);
-
-                }
-            }
+            AzureKeyCredential credential = new AzureKeyCredential(configuration["AzureSearch.ApiKey"]);
+            await searchManager.CreateIndexIfNotPresent(credential,SearchIndexName);
         }
+
 
         private async Task ListFiles(FileClient fileClient)
         {
-            var batchFiles =await fileClient.GetFilesAsync(OpenAIFilePurpose.Batch);
+            var batchFiles = await fileClient.GetFilesAsync(OpenAIFilePurpose.Batch);
             foreach (var batchFile in batchFiles.Value)
             {
                 logger.LogInformation($"{batchFile.Id},{batchFile.Filename},{batchFile.Status}-{batchFile.StatusDetails}");

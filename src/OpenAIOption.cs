@@ -24,16 +24,17 @@ namespace ConsoleApp
             logger.LogTrace($"{nameof(OpenAIRAGOption)} : Start");
             string localBlogPostsFilePath = configuration["LocalBlogPostsFileName"];
             OpenAIClient client = new AzureOpenAIClient(new Uri(configuration["Azure.OpenAI.Url"]), new ApiKeyCredential(configuration["Azure.OpenAI.Key"]));
-            while (true)
+            string input ="q";
+            do 
             {
-                string input = Input.ReadString("Question: ");
+                input = Input.ReadString("Question: ");
                 var chatClient = client.GetChatClient("gpt4");
                 ChatCompletionOptions chatCompletionOptions = new ChatCompletionOptions();
                 var chatCompletion = await chatClient.CompleteChatAsync([
                     new SystemChatMessage("You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest content available in prompt.Do not answer from any sources other than the mentioned blog"),
                     new UserChatMessage(input)]);
                 logger.LogInformation($"ChatGPT: {chatCompletion.Value.Role}: {chatCompletion.Value.Content[0].Text} ");
-            }
+            } while (!string.Equals(input,"q",StringComparison.OrdinalIgnoreCase) && !string.Equals(input,"quit",StringComparison.OrdinalIgnoreCase));
         }
     }
 }
