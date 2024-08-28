@@ -64,6 +64,7 @@ namespace ConsoleApp
         {
             AzureKeyCredential credential = new AzureKeyCredential(configuration["Azure.Search.ApiKey"]);
             await searchManager.CreateIndexIfNotPresent(credential,SearchIndexName);
+            await searchManager.LoadIndex(credential,SearchIndexName);
         }
 
 

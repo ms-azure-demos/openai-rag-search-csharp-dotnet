@@ -8,6 +8,6 @@ namespace ConsoleApp
         public string Name { get; set; }
         public string Description { get; set; }
         public string Author { get; set; }
-        public IList<BlogPost> Posts { get; } = new List<BlogPost>();
+        public List<BlogPost> Posts { get; set; } = new List<BlogPost>();
     }
 }
