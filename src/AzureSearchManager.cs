@@ -23,13 +23,14 @@ namespace ConsoleApp
         {
 
             SearchIndexClient client = new SearchIndexClient(new Uri(configuration["Azure.Search.EndPoint"]), credential);
-            var response = await client.GetIndexAsync(SearchIndexName);
-            if (response != null && response.Value != null)
+            try
             {
+                var response = await client.GetIndexAsync(SearchIndexName);
                 logger.LogInformation("Index {Index} exits", SearchIndexName);
             }
-            else
+            catch (RequestFailedException ex) {
             {
+                
                 SearchIndex si = new SearchIndex(SearchIndexName)
                 {
                     VectorSearch = new()
@@ -60,7 +61,8 @@ namespace ConsoleApp
 
                     }
                 };
-                await client.CreateIndexAsync(si);
+                var searchIndexResponse = await client.CreateIndexAsync(si);
+                logger.LogInformation("Index created name:{indexName}", SearchIndexName);
             }
         }
     }

@@ -49,6 +49,7 @@ namespace ConsoleApp
                     Endpoint = new Uri(configuration["Azure.Search.EndPoint"]),
                     IndexName = configuration["Azure.Search.IndexName"],
                     Authentication = DataSourceAuthentication.FromApiKey(configuration["AzureSearch.ApiKey"])
+                    
                 });
 #pragma warning restore AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 var chatCompletion = await chatClient.CompleteChatAsync([
@@ -61,7 +62,7 @@ namespace ConsoleApp
 
         internal async Task VectorizeBlogPosts(CancellationToken token)
         {
-            AzureKeyCredential credential = new AzureKeyCredential(configuration["AzureSearch.ApiKey"]);
+            AzureKeyCredential credential = new AzureKeyCredential(configuration["Azure.Search.ApiKey"]);
             await searchManager.CreateIndexIfNotPresent(credential,SearchIndexName);
         }
 
