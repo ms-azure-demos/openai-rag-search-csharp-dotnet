@@ -16,6 +16,7 @@ using OpenAI.VectorStores;
 using OpenAI.Files;
 using Azure.AI.OpenAI.Chat;
 using System.Net;
+using System.Collections.Generic;
 namespace ConsoleApp
 {
     class OpenAIAzureSearchRAGOptions
@@ -36,27 +37,51 @@ namespace ConsoleApp
         {
             logger.LogTrace($"{nameof(OpenAIAzureSearchRAGOptions)} : Start");
             string localBlogPostsFilePath = configuration["LocalBlogPostsFileName"];
+            const string systemMessage = "You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest blog posts available RAG data source of Azure Search. Strictly use content from the mentioned blog only and data source. Politely refuse answers from anywhere else";
             OpenAIClient client = new AzureOpenAIClient(new Uri(configuration["Azure.OpenAI.Url"]), new ApiKeyCredential(configuration["Azure.OpenAI.Key"]));
+            var chatClient = client.GetChatClient("gpt4");
+            ChatCompletionOptions chatCompletionOptions = new ChatCompletionOptions()
+            {
+                Temperature = .7f,
+                TopP = .95f,
+                FrequencyPenalty = 0,
+                PresencePenalty = 0,
+                MaxTokens = 800
+            };
+#pragma warning disable AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
+            chatCompletionOptions.AddDataSource(new AzureSearchChatDataSource()
+            {
+                Endpoint = new Uri(configuration["Azure.Search.EndPoint"]),
+                IndexName = configuration["Azure.Search.IndexName"],
+                SemanticConfiguration = "default",
+                QueryType = DataSourceQueryType.Simple,
+                InScope = true,
+                RoleInformation = systemMessage,
+                FieldMappings = new DataSourceFieldMappings(),
+                Filter = null,
+                Strictness = 3,
+                TopNDocuments = 5,
+                Authentication = DataSourceAuthentication.FromApiKey("Azure.Search.ApiKey"),
+            });
             string input = Input.ReadString("Question (q/quit) to quit: ");
             while (!string.Equals(input, "q", StringComparison.OrdinalIgnoreCase) && !string.Equals(input, "quit", StringComparison.OrdinalIgnoreCase))
             {
-                var chatClient = client.GetChatClient("gpt4");
-                ChatCompletionOptions chatCompletionOptions = new ChatCompletionOptions();
-#pragma warning disable AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
-                chatCompletionOptions.AddDataSource(new AzureSearchChatDataSource()
-                {
-                    Endpoint = new Uri(configuration["Azure.Search.EndPoint"]),
-                    IndexName = configuration["Azure.Search.IndexName"],
-                    Authentication = DataSourceAuthentication.FromApiKey(configuration["Azure.Search.ApiKey"]),
-                    QueryType = DataSourceQueryType.Simple,
-                    InScope = true
-                });
-#pragma warning restore AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 var chatCompletion = await chatClient.CompleteChatAsync([
-                    new SystemChatMessage("You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest content available in prompt or RAG source.Do not answer from any sources other than the mentioned blog"),
-                    //new UserChatMessage(File.ReadAllText(localBlogPostsFilePath)),
+                    new SystemChatMessage(systemMessage),
                     new UserChatMessage(input)]);
+                AzureChatMessageContext onYourDataContext = chatCompletion.Value.GetAzureMessageContext();
+#pragma warning restore AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 logger.LogInformation($"ChatGPT: {chatCompletion.Value.Role}: {chatCompletion.Value.Content[0].Text} ");
+
+                if (onYourDataContext?.Intent is not null)
+                {
+                    logger.LogInformation($"Intent: {onYourDataContext.Intent}");
+                }
+                foreach (AzureChatCitation citation in onYourDataContext?.Citations ?? new List<AzureChatCitation>())
+                {
+                    logger.LogInformation($"Citation:{citation.Url}: {citation.Content}");
+                }
+
                 input = Input.ReadString("Question (q/quit) to quit: ");
             }
         }
