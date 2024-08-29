@@ -37,10 +37,9 @@ namespace ConsoleApp
             logger.LogTrace($"{nameof(OpenAIAzureSearchRAGOptions)} : Start");
             string localBlogPostsFilePath = configuration["LocalBlogPostsFileName"];
             OpenAIClient client = new AzureOpenAIClient(new Uri(configuration["Azure.OpenAI.Url"]), new ApiKeyCredential(configuration["Azure.OpenAI.Key"]));
-            string input = "q";
-            do
+            string input = Input.ReadString("Question (q/quit) to quit: ");
+            while (!string.Equals(input, "q", StringComparison.OrdinalIgnoreCase) && !string.Equals(input, "quit", StringComparison.OrdinalIgnoreCase))
             {
-                input = Input.ReadString("Question (q/quit) to quit: ");
                 var chatClient = client.GetChatClient("gpt4");
                 ChatCompletionOptions chatCompletionOptions = new ChatCompletionOptions();
 #pragma warning disable AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
@@ -48,23 +47,25 @@ namespace ConsoleApp
                 {
                     Endpoint = new Uri(configuration["Azure.Search.EndPoint"]),
                     IndexName = configuration["Azure.Search.IndexName"],
-                    Authentication = DataSourceAuthentication.FromApiKey(configuration["AzureSearch.ApiKey"])
-                    
+                    Authentication = DataSourceAuthentication.FromApiKey(configuration["Azure.Search.ApiKey"]),
+                    QueryType = DataSourceQueryType.Simple,
+                    InScope = true
                 });
 #pragma warning restore AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 var chatCompletion = await chatClient.CompleteChatAsync([
-                    new SystemChatMessage("You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest content available in prompt.Do not answer from any sources other than the mentioned blog"),
+                    new SystemChatMessage("You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest content available in prompt or RAG source.Do not answer from any sources other than the mentioned blog"),
                     //new UserChatMessage(File.ReadAllText(localBlogPostsFilePath)),
                     new UserChatMessage(input)]);
                 logger.LogInformation($"ChatGPT: {chatCompletion.Value.Role}: {chatCompletion.Value.Content[0].Text} ");
-            } while (!string.Equals(input, "q", StringComparison.OrdinalIgnoreCase) && !string.Equals(input, "quit", StringComparison.OrdinalIgnoreCase));
+                input = Input.ReadString("Question (q/quit) to quit: ");
+            }
         }
 
         internal async Task VectorizeBlogPosts(CancellationToken token)
         {
             AzureKeyCredential credential = new AzureKeyCredential(configuration["Azure.Search.ApiKey"]);
-            await searchManager.CreateIndexIfNotPresent(credential,SearchIndexName);
-            await searchManager.LoadIndex(credential,SearchIndexName);
+            await searchManager.CreateIndexIfNotPresent(credential, SearchIndexName);
+            await searchManager.LoadIndex(credential, SearchIndexName);
         }
 
 
