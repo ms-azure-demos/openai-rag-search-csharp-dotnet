@@ -61,14 +61,17 @@ namespace ConsoleApp
                 Filter = null,
                 Strictness = 3,
                 TopNDocuments = 5,
-                Authentication = DataSourceAuthentication.FromApiKey("Azure.Search.ApiKey"),
+                Authentication = DataSourceAuthentication.FromApiKey(configuration["Azure.Search.ApiKey"]),
             });
             string input = Input.ReadString("Question (q/quit) to quit: ");
             while (!string.Equals(input, "q", StringComparison.OrdinalIgnoreCase) && !string.Equals(input, "quit", StringComparison.OrdinalIgnoreCase))
             {
-                var chatCompletion = await chatClient.CompleteChatAsync([
-                    new SystemChatMessage(systemMessage),
-                    new UserChatMessage(input)]);
+                var chatCompletion = await chatClient.CompleteChatAsync(
+                    [
+                        new SystemChatMessage(systemMessage),
+                        new UserChatMessage(input)
+                    ],
+                    chatCompletionOptions);
                 AzureChatMessageContext onYourDataContext = chatCompletion.Value.GetAzureMessageContext();
 #pragma warning restore AOAI001 // Type is for evaluation purposes only and is subject to change or removal in future updates. Suppress this diagnostic to proceed.
                 logger.LogInformation($"ChatGPT: {chatCompletion.Value.Role}: {chatCompletion.Value.Content[0].Text} ");
@@ -79,7 +82,7 @@ namespace ConsoleApp
                 }
                 foreach (AzureChatCitation citation in onYourDataContext?.Citations ?? new List<AzureChatCitation>())
                 {
-                    logger.LogInformation($"Citation:{citation.Url}: {citation.Content}");
+                    logger.LogInformation($"Citation:{citation.Url}");
                 }
 
                 input = Input.ReadString("Question (q/quit) to quit: ");

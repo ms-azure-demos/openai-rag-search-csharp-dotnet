@@ -1,9 +1,28 @@
 @startuml
-!includeurl https://raw.githubusercontent.com/RicardoNiepel/C4-PlantUML/release/1-0/C4_Container.puml
-header "Diagrams"
-title "Architecture"
-Person(personAlias, "Internet User", "Description")
+!includeurl https://raw.githubusercontent.com/plantuml-stdlib/C4-PlantUML/master/C4_Container.puml
 
-caption "JoymonOnline"
+!define AzurePuml https://raw.githubusercontent.com/plantuml-stdlib/Azure-PlantUML/master/dist
+!includeurl AzurePuml/AzureCommon.puml
+!includeurl AzurePuml/Web/AzureSearch.puml
+
+!define DEVICONS https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/devicons
+!include DEVICONS/angular.puml
+!include DEVICONS/java.puml
+!include DEVICONS/msql_server.puml
+
+!define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
+!include FONTAWESOME/users.puml
+
+!define WIKIMEDIA https://commons.wikimedia.org/wiki/File:ChatGPT_logo.svg
+
+header "Diagrams"
+title "Azure Open AI - RAG with Azure Search and data_sources"
+Person(personAlias, "Internet User", "Description")
+Container(app,".Net application",".Net 8")
+AzureSearch(search,"Blog Index","Azure Search","Stores blog posts")
+Container(spa, "SPA", "angular", "Interface that the customer interacts with", $sprite="angular")
+
+Container(spa2, "SPA2", "angular", "Interface that the customer interacts with", $sprite="img:https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg{scale=0.1}")
+caption "JoymonOnline.in. Image credit icons8.com"
 
 @enduml
