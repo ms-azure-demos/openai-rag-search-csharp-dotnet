@@ -12,17 +12,23 @@
 
 !define FONTAWESOME https://raw.githubusercontent.com/tupadr3/plantuml-icon-font-sprites/master/font-awesome-5
 !include FONTAWESOME/users.puml
+!include FONTAWESOME/blogger.puml
 
-!define WIKIMEDIA https://commons.wikimedia.org/wiki/File:ChatGPT_logo.svg
+!define CHATGPTLOGOURL https://upload.wikimedia.org/wikipedia/commons/1/13/ChatGPT-Logo.png
 
 header "Diagrams"
 title "Azure Open AI - RAG with Azure Search and data_sources"
-Person(personAlias, "Internet User", "Description")
-Container(app,".Net application",".Net 8")
+'Person(personAlias, "Internet User", "Description")
+Container(app,".Net Console application",".Net 8")
+Container(blogger,"joymonscode.blogspot.com","blogger.com","Blogging platform from Google",$sprite="blogger")
 AzureSearch(search,"Blog Index","Azure Search","Stores blog posts")
-Container(spa, "SPA", "angular", "Interface that the customer interacts with", $sprite="angular")
-
-Container(spa2, "SPA2", "angular", "Interface that the customer interacts with", $sprite="img:https://upload.wikimedia.org/wikipedia/commons/0/04/ChatGPT_logo.svg{scale=0.1}")
+'Container(spa, "SPA", "angular", "The main interface that the customer interacts with", $sprite="angular")
+Container(azureOpenAI, "Azure OpenAI", "Azure OpenAI", "LLM hosting platform in Azure", $sprite="img:CHATGPTLOGOURL{scale=.02}")
+'Rel(personAlias,app,"Run app")
+Rel(app,blogger,"WebAPI to get blog posts","http(s),443, OAuth")
+Rel(app,search,"Create index and add blog posts","http(s),443,api-key")
+Rel(app,azureOpenAI,"chat completion api with data_sources","http(s), 443, Api-Key")
+Rel(azureOpenAI,search,"Query","http(s), 443, Api-Key")
 caption "JoymonOnline.in. Image credit icons8.com"
 
 @enduml
