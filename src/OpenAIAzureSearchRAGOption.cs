@@ -89,7 +89,7 @@ namespace ConsoleApp
             }
         }
 
-        internal async Task VectorizeBlogPosts(CancellationToken token)
+        internal async Task AddBlogPostsToSearchIndex(CancellationToken token)
         {
             AzureKeyCredential credential = new AzureKeyCredential(configuration["Azure.Search.ApiKey"]);
             await searchManager.CreateIndexIfNotPresent(credential, SearchIndexName);
