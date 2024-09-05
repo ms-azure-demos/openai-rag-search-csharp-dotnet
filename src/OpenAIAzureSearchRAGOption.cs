@@ -36,7 +36,6 @@ namespace ConsoleApp
         async internal Task ExecuteSearch(CancellationToken stoppingToken)
         {
             logger.LogTrace($"{nameof(OpenAIAzureSearchRAGOptions)} : Start");
-            string localBlogPostsFilePath = configuration["LocalBlogPostsFileName"];
             const string systemMessage = "You are a chatbot answering from the blog named Joymon v/s Code located at joymonscode.blogspot.com. You will be using the latest blog posts available RAG data source of Azure Search. Strictly use content from the mentioned blog only and data source. Politely refuse answers from anywhere else";
             OpenAIClient client = new AzureOpenAIClient(new Uri(configuration["Azure.OpenAI.Url"]), new ApiKeyCredential(configuration["Azure.OpenAI.Key"]));
             var chatClient = client.GetChatClient("gpt4");
