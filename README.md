@@ -13,14 +13,14 @@ This demo shows how can we include the data source in the chat completion API it
 	- First download the blog posts.
 	- It will be using hardcoded tag=nas to download posts. Change that as per your blog
 	- Downloaded posts will be available at /bin folder and the file name will be as per config[LocalBlogPostsFileName]
-	- Next upload the documents to Azure Search Index by using Option 4.
+	- Next upload the documents to Azure Search Index by using Option 4. (It will be creating 'blog-index' if not present and upload to that)
 	- Finally RAG using the option 5.
 
 > In case anything is missing, please create an issue or PR.
 
 # Architecture
 
-![https://raw.githubusercontent.com/ms-azure-demos/openai-rag/main/diagrams/c2-diagram.puml](https://raw.githubusercontent.com/ms-azure-demos/openai-rag/main/diagrams/c2-diagram.puml)
+![https://raw.githubusercontent.com/ms-azure-demos/openai-rag/main/diagrams/c2-diagram.puml]( https://www.plantuml.com/plantuml/proxy?src=https://raw.githubusercontent.com/ms-azure-demos/openai-rag/main/diagrams/c2-diagram.puml?format=svg)
 
 # Specifications
 
